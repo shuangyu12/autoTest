@@ -1,0 +1,20 @@
+directories:
+  inputs: inputs
+  artifacts: artifacts
+  outputs: outputs
+  logs: logs
+  compat_result: result
+
+logging:
+  logger_name: individualStockReview
+  level: DEBUG
+  console_level: INFO
+  file_level: DEBUG
+  console_enabled: true
+  file_enabled: true
+  file_name: individualStockReview.log
+  console_format: "%(levelname)s %(message)s"
+  file_format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
+compatibility:
+  mirror_to_result: true

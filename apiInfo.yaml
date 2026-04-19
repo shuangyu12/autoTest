@@ -1,0 +1,269 @@
+#获得研报数据
+getResearchReport:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/base/file/baseFileList"
+    headers:
+      Authorization: "LA49Z92EGHMdWBBsWnh1CAQe53Y"
+      Content-Type: "application/json"
+    json:
+      baseId: "1"
+      current: 1
+      pageSize: 100000
+
+#获得财报数据
+getFinancialReport:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/base/file/baseFileList"
+    headers:
+      Authorization: "LA49Z92EGHMdWBBsWnh1CAQe53Y"
+      Content-Type: "application/json"
+    json:
+      baseId: "4"
+      current: 1
+      pageSize: 100000
+
+#查询es
+getEsInfo:
+    method: POST
+    url: "http://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/base/file/searchDataByDsl"
+    headers:
+      Authorization: "6vD58tjSJ1wKEBhhrONKRyetYgw"
+      Content-Type: "application/json"
+    json:
+      indexName: ""
+      queryDsl: ""
+
+#初稿生成
+gfGetSession:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/chat/addChatSession"
+    headers:
+      Authorization: "k9Ow96tZmx02l8SSCInJPDb7_So"
+      Content-Type: "application/json"
+    json:
+      sessionName: "新对话"
+      sessionType: "agent"
+      chatType: "agent_chat_debug"
+      agentId: "254741009915472" #更新agentid
+      agentBatchId: "254741009915473" #更新agentBatchId
+
+
+gfChatApi_1:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: "80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269"
+    json:
+      botId: "261189195193792"
+      userId: "261189195194816"
+      conversationId: "261189195194816"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 600
+
+
+gfChatApi_2:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: "80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269"
+    json:
+      botId: "261190636145088"
+      userId: "261190636145089"
+      conversationId: "262516919193456"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 600
+
+
+gfChatApi_3:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: "80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269"
+    json:
+      botId: "261191909903808"
+      userId: "261191909904832"
+      conversationId: "261987961725520"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 6000
+
+
+gfChatApi_4:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: "80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269"
+    json:
+      botId: "261195550069184"
+      userId: "261195550070208"
+      conversationId: "262164813931232"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 600
+
+
+gfChatApi_8:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: "80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269"
+    json:
+      botId: "262065185775184"
+      userId: "262065185775185"
+      conversationId: "262164813931232"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 6000000
+
+
+testChatApi_8:
+    method: POST
+    url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+    headers:
+      AuthCode: a726bc10c18b6e59cdbd5bea2fe8fe28d9b188b1de28aeeffe9ca3dbcf945083
+    json:
+      botId: "264294730157952"
+      userId: "264294730163072"
+      conversationId: "264361279751760"
+      urlVersion: 3.0
+      messages: ""
+    timeout: 600
+
+
+#获得研报query
+queryGenerate:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+  headers:
+    AuthCode: c492d14bacc08d75f07c1de74e5b2926d0534a688671b8aacc46e0fa1a2b3f70
+  json:
+    botId: "264905199575632"
+    userId: "264905199577680"
+    conversationId: "264361279751760"
+    urlVersion: 3.0
+    messages: ""
+  timeout: 600
+
+#溯源评测智能体
+quoteTest:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+  headers:
+    AuthCode: c492d14bacc08d75f07c1de74e5b2926d0534a688671b8aacc46e0fa1a2b3f70
+  json:
+    botId: "259365541079056"
+    userId: "259365541080080"
+    conversationId: "264361279751760"
+    urlVersion: 3.0
+    messages: ""
+  timeout: 600
+
+#获得溯源回答的智能体
+getAnswer:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+  headers:
+    AuthCode: c492d14bacc08d75f07c1de74e5b2926d0534a688671b8aacc46e0fa1a2b3f70
+  json:
+    botId: "266134283287424"
+    userId: "266134283294592"
+    conversationId: "266149926698880"
+    urlVersion: 3.0
+    messages: ""
+  timeout: 600
+
+#判断相关性的智能体
+judgeAgent:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+  headers:
+    AuthCode: c492d14bacc08d75f07c1de74e5b2926d0534a688671b8aacc46e0fa1a2b3f70
+  json:
+    botId: "265093888250896"
+    userId: "265093888250897"
+    conversationId: "264361279751760"
+    urlVersion: 3.0
+    messages: ""
+  timeout: 600
+
+#通过研报名称获得报告数据
+getReportByFileName:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/base/file/baseFileList"
+  headers:
+    Authorization: "LA49Z92EGHMdWBBsWnh1CAQe53Y"
+    Content-Type: "application/json"
+  json:
+    baseId: "1"
+    current: 1
+    keyword: ""
+    pageSize: 100000
+
+
+#读取请求信息
+getResultByRecord:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/api/findApiPage"
+  headers:
+    Authorization: "LA49Z92EGHMdWBBsWnh1CAQe53Y"
+    Content-Type: "application/json"
+  json:
+    "current": 1
+    "size": 10000
+    "agentId": "265093888250897"
+    "invokeStatus": ""
+    "invokeType": ""
+    "createUser": ""
+    "token": ""
+    "sessionId": ""
+    "promptInput": ""
+    "promptAnswer": ""
+    "startDate": "2026-03-12 09:00:00"
+    "endDate": "2026-03-12 23:59:59"
+
+#研报问答评测智能体
+reportAnswerTest:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/completions"
+  headers:
+    AuthCode: c492d14bacc08d75f07c1de74e5b2926d0534a688671b8aacc46e0fa1a2b3f70
+  json:
+    botId: "266233340682832"
+    userId: "266233340688976"
+    conversationId: "266245891559280"
+    urlVersion: 3.0
+    messages: ""
+  timeout: 600
+
+
+#研报问答自定义参数
+getAnswerCustom:
+  method: POST
+  url: "https://irmp-cot-uat.gf.com.cn/cloudapi/chat/v2/agent/outside/sse/conversations"
+  headers:
+    AuthCode: 80bc480c79a24997e2b6aa966b99b6dfaf57be2948aa71b1b248ec858700d269
+  json:
+    bot_id: "257751467989872"
+    user_id: "258348449577408"
+    conversation_id: "10086"
+    urlVersion: 3.0
+    messages: ""
+    b_stream: true
+    custom_variables: null
+    additional_messages: null
+    agent_task_code: null
+    agent_task_start_time: null
+    agent_task_batch_code: null
+    url_version: '3.0'
+    full_amount: true
+    view_point_nodes: null
+    dynamic_prompt: null
+    custom_inputs:
+      tool_code: deepResearchTool
+      research_report_type:
+        - internalReport
+      report_start_time: '2023-03-27'
+      report_end_time: '2026-03-27'
+  timeout: 600
