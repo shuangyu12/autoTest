@@ -8,6 +8,7 @@ from copy import deepcopy
 from typing import Any, Callable, Mapping
 
 import aiohttp
+from urllib.parse import urlparse
 
 from individualStockReview.agent.template import render_structure
 from individualStockReview.core.logging import get_logger, mask_sensitive_data, summarize_data
@@ -176,10 +177,54 @@ class retryClass:
 
 
 class GFChatAgent:
+    SESSION_REFRESH_HOSTS = {"irmp-cot-uat.gf.com.cn"}
+    COMPLETIONS_PATH_SUFFIX = "/outside/sse/completions"
+    CONVERSATIONS_PATH_SUFFIX = "/outside/sse/conversations"
+
     def __init__(self, sessionParam: dict[str, Any], agentChatParam: dict[str, Any], logger_name: str = "agent.gf.chat"):
         self.sessionParam = deepcopy(sessionParam)
         self.agentChatParam = deepcopy(agentChatParam)
         self.logger = get_logger(logger_name)
+
+    @classmethod
+    def _resolve_session_strategy(cls, request_params: Mapping[str, Any]) -> dict[str, Any]:
+        request_json = request_params.get("json")
+        if not isinstance(request_json, Mapping):
+            request_json = {}
+
+        parsed_url = urlparse(str(request_params.get("url") or "").strip())
+        host = parsed_url.netloc.lower()
+        path = parsed_url.path.lower()
+        has_conversation_id = "conversationId" in request_json
+        has_conversation_id_snake = "conversation_id" in request_json
+        is_managed_completion = host in cls.SESSION_REFRESH_HOSTS and path.endswith(cls.COMPLETIONS_PATH_SUFFIX)
+        is_fixed_conversation = host in cls.SESSION_REFRESH_HOSTS and path.endswith(cls.CONVERSATIONS_PATH_SUFFIX)
+
+        if has_conversation_id_snake or is_fixed_conversation:
+            return {
+                "host": host,
+                "path": path,
+                "target_field": "conversation_id",
+                "should_refresh": False,
+                "reason": "conversation_id 走 conversations 接口，框架不刷新 sessionId",
+            }
+
+        if is_managed_completion and not has_conversation_id_snake:
+            return {
+                "host": host,
+                "path": path,
+                "target_field": "conversationId",
+                "should_refresh": True,
+                "reason": "conversationId 走 completions 接口，框架会先调用 gfGetSession 刷新 sessionId",
+            }
+
+        return {
+            "host": host,
+            "path": path,
+            "target_field": "conversationId" if has_conversation_id else None,
+            "should_refresh": False,
+            "reason": "当前接口未命中 GF session 自动刷新规则，沿用请求里的原始会话参数",
+        }
 
     @staticmethod
     async def getSessionAsync(response: aiohttp.ClientResponse, *args, **kwargs) -> str:
@@ -271,7 +316,25 @@ class GFChatAgent:
             session_update_params = render_structure(deepcopy(kwargs["sessionUpdateParams"]), template_variables)
             session_param.setdefault("json", {}).update(session_update_params)
 
-        if "conversation_id" not in agent_json and "conversationId" not in agent_json:
+        force_new_session = bool(kwargs.get("forceNewSession") or kwargs.get("refreshSession"))
+        session_strategy = self._resolve_session_strategy(agent_chat_param)
+        if force_new_session and session_strategy.get("target_field") == "conversationId":
+            session_strategy = {
+                **session_strategy,
+                "should_refresh": True,
+                "reason": "调用方显式要求刷新 conversationId，框架将重新调用 gfGetSession",
+            }
+
+        self.logger.debug(
+            "GF session策略: host=%s path=%s target=%s refresh=%s reason=%s",
+            session_strategy.get("host"),
+            session_strategy.get("path"),
+            session_strategy.get("target_field"),
+            session_strategy.get("should_refresh"),
+            session_strategy.get("reason"),
+        )
+
+        if session_strategy.get("should_refresh"):
             session_id = await retryClass.decorator(self.getSessionAsync, session_param)
             default_result["isSucess"] = session_id[0]
             if not session_id[0]:
@@ -297,7 +360,14 @@ class GFChatAgent:
         )
 
         request_kwargs = deepcopy(kwargs)
-        for key in ["templateVariables", "template_variables", "sessionUpdateParams", "agentUpdateParams"]:
+        for key in [
+            "templateVariables",
+            "template_variables",
+            "sessionUpdateParams",
+            "agentUpdateParams",
+            "forceNewSession",
+            "refreshSession",
+        ]:
             request_kwargs.pop(key, None)
 
         chat_result = await retryClass.decorator(self.jsonAnswerAsync, agent_chat_param, **request_kwargs)

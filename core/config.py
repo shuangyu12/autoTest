@@ -37,10 +37,18 @@ class ConfigManager:
         self.package_root = PACKAGE_ROOT
         self.api_file = Path(api_file) if api_file else DEFAULT_API_FILE
         self.runtime_file = Path(runtime_file) if runtime_file else DEFAULT_RUNTIME_FILE
-        self.volcengine_file = Path(volcengine_file) if volcengine_file else DEFAULT_VOLCENGINE_FILE
+        self.volcengine_file = self._resolve_volcengine_file(volcengine_file)
         self.api_args = self._load_yaml(self.api_file)
         self.runtime_args = self._load_yaml(self.runtime_file) if self.runtime_file.exists() else {}
         self.volcengine_args = self._load_yaml(self.volcengine_file) if self.volcengine_file.exists() else {}
+
+    @staticmethod
+    def _resolve_volcengine_file(volcengine_file: str | Path | None) -> Path:
+        if volcengine_file:
+            return Path(volcengine_file)
+        if DEFAULT_VOLCENGINE_FILE.exists():
+            return DEFAULT_VOLCENGINE_FILE
+        return DEFAULT_VOLCENGINE_EXAMPLE_FILE
 
     @staticmethod
     def _load_yaml(path: Path) -> dict[str, Any]:

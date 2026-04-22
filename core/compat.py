@@ -87,6 +87,10 @@ def build_langchain_eval_result() -> dict[str, Any]:
         "reason": "",
         "provider": "volcengine",
         "model": "",
+        "response_id": "",
+        "response_metadata": {},
+        "usage_metadata": {},
+        "additional_kwargs": {},
         "isSucess": False,
         "errInfo": "",
     }

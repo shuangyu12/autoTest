@@ -76,6 +76,10 @@ class LangChainEvaluator:
                 "model": self.model_name,
                 "isSucess": False,
                 "errInfo": "",
+                "response_id": "",
+                "response_metadata": {},
+                "usage_metadata": {},
+                "additional_kwargs": {},
             }
         )
 
@@ -96,12 +100,20 @@ class LangChainEvaluator:
         )
 
         try:
-            raw_output = await self.runner.invoke_messages(self.chat_model, messages, timeout=self.timeout)
+            invoke_payload = await self.runner.invoke_messages_with_metadata(self.chat_model, messages, timeout=self.timeout)
+            raw_output = str(invoke_payload.get("content") or "")
             parsed_output = self._try_parse_json(raw_output) if parse_json else None
+            payload.update(
+                {
+                    "result": raw_output,
+                    "response_id": invoke_payload.get("response_id", "") or "",
+                    "response_metadata": invoke_payload.get("response_metadata") or {},
+                    "usage_metadata": invoke_payload.get("usage_metadata") or {},
+                    "additional_kwargs": invoke_payload.get("additional_kwargs") or {},
+                }
+            )
             if parsed_output:
                 payload.update(parsed_output)
-            else:
-                payload["result"] = raw_output
             payload["score"] = coerce_score(payload.get("score", ""))
             payload["isSucess"] = True
         except Exception as exc:

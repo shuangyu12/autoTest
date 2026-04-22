@@ -1,8 +1,9 @@
 provider: volcengine
 base_url: https://ark.cn-beijing.volces.com/api/v3
-api_key: ${VOLCENGINE_API_KEY}
-model: your-model-id
+api_key: d0187b1f-58c6-4909-ba41-d60b6a8efbd5
+model: doubao-seed-1-8-251228
 temperature: 0.0
 timeout: 600
 max_retries: 2
+thinking_mode: disabled
 default_system_prompt: 你是一个严格的评测智能体，请根据规则输出结构化结果。

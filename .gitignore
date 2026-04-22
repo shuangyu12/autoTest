@@ -1,2 +1,6 @@
-apiInfo.yaml
-result/
+/apiInfo.yaml
+/inputs/
+/result/
+/outputs/
+__pycache__/
+*.pyc
