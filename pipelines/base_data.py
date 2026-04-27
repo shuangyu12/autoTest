@@ -123,7 +123,7 @@ class BaseDataPipeline:
         record_id = await self._get_report_id_by_name(file_name)
         if not record_id[0]:
             failed = deepcopy(default_result)
-            failed.update({"isSucess": False, "errInfo": record_id[1], "realFile": file_name})
+            failed.update({"isSucess": False, "errorInfo": record_id[1], "realFile": file_name})
             return failed
         update_default = deepcopy(default_result)
         update_default["realFile"] = file_name
@@ -275,14 +275,14 @@ class BaseDataPipeline:
             for idx, data in enumerate(data_list):
                 default_result = build_quote_result()
                 default_result.update({"messages": data.get("query"), "idx": idx})
-                session_update_params = {"sessionName": f"问答测试2-{idx}"}
+                session_name = f"问答测试2-{idx}"
                 agent_update_params = {"messages": default_result["messages"]}
                 tasks.append(
                     self._bounded(
                         semaphore,
                         get_answer_agent.getChatResult,
                         defaultResult=deepcopy(default_result),
-                        sessionUpdateParams=session_update_params,
+                        sessionName=session_name,
                         agentUpdateParams=agent_update_params,
                         replaceTrace=True,
                         notTranJson=True,

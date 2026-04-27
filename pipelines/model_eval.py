@@ -78,7 +78,7 @@ class ModelEvalPipeline:
             replaceTrace=True,
         )
         if not generation_result.get("isSucess"):
-            generation_result["errInfo"] = generation_result.get("errInfo", "")
+            generation_result["errorInfo"] = generation_result.get("errorInfo", "")
             return generation_result
 
         score_agent = self.registry.get_gf_agent("testChatApi_8")

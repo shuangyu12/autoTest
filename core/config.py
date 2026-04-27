@@ -87,6 +87,7 @@ class ConfigManager:
             {
                 "agentId": agent_json.get("userId") or agent_json.get("user_id") or session_json.get("agentId"),
                 "agentBatchId": agent_json.get("botId") or agent_json.get("bot_id") or session_json.get("agentBatchId"),
+                "sessionName": agent_json.get("sessionName") or agent_json.get("session_name") or session_json.get("sessionName"),
             }
         )
         return session_params, agent_params

@@ -75,7 +75,7 @@ class LangChainEvaluator:
                 "provider": self.provider_name,
                 "model": self.model_name,
                 "isSucess": False,
-                "errInfo": "",
+                "errorInfo": "",
                 "response_id": "",
                 "response_metadata": {},
                 "usage_metadata": {},
@@ -91,7 +91,7 @@ class LangChainEvaluator:
                 messages.append(SystemMessage(content=rendered_system_prompt))
             messages.append(HumanMessage(content=rendered_prompt))
         except ImportError as exc:
-            payload["errInfo"] = f"缺少 langchain_core 依赖: {exc}"
+            payload["errorInfo"] = f"缺少 langchain_core 依赖: {exc}"
             return payload
 
         self.logger.debug(
@@ -118,5 +118,5 @@ class LangChainEvaluator:
             payload["isSucess"] = True
         except Exception as exc:
             LOGGER.exception("LangChain 评测失败: %s", exc)
-            payload["errInfo"] = str(exc)
+            payload["errorInfo"] = str(exc)
         return payload

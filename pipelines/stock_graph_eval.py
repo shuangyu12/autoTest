@@ -345,7 +345,7 @@ class StockGraphEvalPipeline:
         if not isinstance(response, dict) or not response.get("isSucess"):
             error_info = "模型调用失败"
             if isinstance(response, dict):
-                error_info = str(response.get("errInfo") or error_info)
+                error_info = str(response.get("errorInfo") or error_info)
             raise RuntimeError(error_info)
         return self._parse_agent_output(response.get("result", ""))
 

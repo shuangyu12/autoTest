@@ -11,7 +11,7 @@ def build_query_result() -> dict[str, Any]:
         "fileId": "",
         "fileName": "",
         "isSucess": False,
-        "errInfo": "",
+        "errorInfo": "",
     }
 
 
@@ -25,7 +25,7 @@ def build_select_query_result() -> dict[str, Any]:
         "score": "",
         "reason": "",
         "isSucess": False,
-        "errInfo": "",
+        "errorInfo": "",
     }
 
 
@@ -38,7 +38,7 @@ def build_quote_result() -> dict[str, Any]:
         "firstResponseTime": 0.0,
         "totalResponseTime": 0.0,
         "isSucess": False,
-        "errInfo": "",
+        "errorInfo": "",
     }
 
 
@@ -50,7 +50,7 @@ def build_answer_score_result() -> dict[str, Any]:
         "score": "",
         "reason": "",
         "isSucess": False,
-        "errInfo": "",
+        "errorInfo": "",
     }
 
 
@@ -71,7 +71,7 @@ def build_model_eval_result() -> dict[str, Any]:
         "messages": "",
         "mergedTemplate": "",
         "isSucess": True,
-        "errInfo": "",
+        "errorInfo": "",
         "chatResult": "",
         "score": 0.0,
         "reason": "",
@@ -92,13 +92,16 @@ def build_langchain_eval_result() -> dict[str, Any]:
         "usage_metadata": {},
         "additional_kwargs": {},
         "isSucess": False,
-        "errInfo": "",
+        "errorInfo": "",
     }
 
 
 def ensure_legacy_defaults(result: dict[str, Any], template: dict[str, Any]) -> dict[str, Any]:
     merged = deepcopy(template)
-    merged.update(result)
+    normalized = deepcopy(result)
+    if "errInfo" in normalized and "errorInfo" not in normalized:
+        normalized["errorInfo"] = normalized.pop("errInfo")
+    merged.update(normalized)
     return merged
 
 

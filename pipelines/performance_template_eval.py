@@ -703,7 +703,7 @@ class PerformanceTemplateEvalPipeline:
                 self.logger.warning("评测结果格式异常，直接记失败: idx=%s error=%s", idx, exc)
                 return self._build_failed_result(record=record, idx=idx, digest=digest, error_message=error_message, attempts=1)
 
-        error_message = str(response.get("errInfo") or "模型调用失败")
+        error_message = str(response.get("errorInfo") or "模型调用失败")
         self.logger.warning("评测调用失败，直接记失败: idx=%s error=%s", idx, error_message)
         return self._build_failed_result(record=record, idx=idx, digest=digest, error_message=error_message, attempts=1)
 

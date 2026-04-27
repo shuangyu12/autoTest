@@ -305,55 +305,54 @@ class GFChatAgent:
 
     async def getChatResult(self, defaultResult: dict[str, Any] | None = None, *args, **kwargs) -> dict[str, Any]:
         default_result = deepcopy(defaultResult or {})
-        default_result.update({"isSucess": False, "errInfo": ""})
+        default_result.update({"isSucess": False, "errorInfo": ""})
         template_variables = _normalize_template_variables(kwargs.get("templateVariables") or kwargs.get("template_variables"))
 
         session_param = render_structure(deepcopy(self.sessionParam), template_variables)
         agent_chat_param = render_structure(deepcopy(self.agentChatParam), template_variables)
         agent_json = agent_chat_param.setdefault("json", {})
+        session_json = session_param.setdefault("json", {})
 
+        if kwargs.get("sessionName"):
+            session_json["sessionName"] = render_structure(str(kwargs["sessionName"]), template_variables)
         if "sessionUpdateParams" in kwargs:
             session_update_params = render_structure(deepcopy(kwargs["sessionUpdateParams"]), template_variables)
-            session_param.setdefault("json", {}).update(session_update_params)
+            session_json.update(session_update_params)
 
-        force_new_session = bool(kwargs.get("forceNewSession") or kwargs.get("refreshSession"))
+        refresh_session = bool(kwargs.get("refreshSession", kwargs.get("forceNewSession", True)))
         session_strategy = self._resolve_session_strategy(agent_chat_param)
-        if force_new_session and session_strategy.get("target_field") == "conversationId":
-            session_strategy = {
-                **session_strategy,
-                "should_refresh": True,
-                "reason": "调用方显式要求刷新 conversationId，框架将重新调用 gfGetSession",
-            }
+        target_field = session_strategy.get("target_field") or "conversationId"
+        refresh_reason = "refreshSession=True，重新获取 sessionId" if refresh_session else "refreshSession=False，沿用原始 sessionId"
 
         self.logger.debug(
             "GF session策略: host=%s path=%s target=%s refresh=%s reason=%s",
             session_strategy.get("host"),
             session_strategy.get("path"),
-            session_strategy.get("target_field"),
-            session_strategy.get("should_refresh"),
-            session_strategy.get("reason"),
+            target_field,
+            refresh_session,
+            refresh_reason,
         )
 
-        if session_strategy.get("should_refresh"):
+        if refresh_session:
             session_id = await retryClass.decorator(self.getSessionAsync, session_param)
             default_result["isSucess"] = session_id[0]
             if not session_id[0]:
-                default_result["errInfo"] = session_id[1]
+                default_result["errorInfo"] = session_id[1]
                 return default_result
-            agent_json["conversationId"] = session_id[1]
+            agent_json[target_field] = session_id[1]
 
         if kwargs.get("agentUpdateParams"):
             agent_update_params = render_structure(deepcopy(kwargs["agentUpdateParams"]), template_variables)
             agent_json.update(agent_update_params)
         else:
-            default_result["errInfo"] = "没有对应的agentUpdateParams"
+            default_result["errorInfo"] = "没有对应的agentUpdateParams"
             return default_result
 
         self.logger.debug(
             "调用 GF 智能体: %s",
             summarize_data(
                 {
-                    "session": session_param.get("json", {}),
+                    "session": session_json,
                     "agent": agent_json,
                 }
             ),
@@ -363,6 +362,7 @@ class GFChatAgent:
         for key in [
             "templateVariables",
             "template_variables",
+            "sessionName",
             "sessionUpdateParams",
             "agentUpdateParams",
             "forceNewSession",
@@ -373,7 +373,7 @@ class GFChatAgent:
         chat_result = await retryClass.decorator(self.jsonAnswerAsync, agent_chat_param, **request_kwargs)
         default_result["isSucess"] = chat_result[0]
         if not chat_result[0]:
-            default_result["errInfo"] = chat_result[1]
+            default_result["errorInfo"] = chat_result[1]
             return default_result
 
         payload = chat_result[1]
@@ -383,6 +383,8 @@ class GFChatAgent:
             except ValueError:
                 pass
         if isinstance(payload, dict):
+            if "errInfo" in payload and "errorInfo" not in payload:
+                payload["errorInfo"] = payload.pop("errInfo")
             default_result.update(payload)
         else:
             default_result["result"] = payload
