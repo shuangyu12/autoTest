@@ -2,5 +2,6 @@
 /inputs/
 /result/
 /outputs/
+/logs/
 __pycache__/
 *.pyc

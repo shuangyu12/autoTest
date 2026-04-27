@@ -27,7 +27,7 @@ DEFAULT_AGENT_MESSAGE = (
     "请基于个股研究框架与输入图谱数据进行评测，只输出一个 JSON 对象，"
     "字段仅包含 score 和 reason。"
 )
-DEFAULT_PARALLEL_NUM = 5
+DEFAULT_PARALLEL_NUM = 1
 DEFAULT_RETRY_NUM = 3
 DEFAULT_REQUEST_DELAY = 3.0
 RESULT_COLUMNS = [
@@ -306,6 +306,7 @@ class StockGraphEvalPipeline:
             f"成功:{success} 失败:{failed} 跳过:{skipped}"
         )
 
+    #注意这个是多线程请求间的空格时间。
     @staticmethod
     async def _wait_for_request_slot(request_delay: float, delay_lock: asyncio.Lock, request_state: dict[str, float]) -> None:
         if request_delay <= 0:
@@ -338,7 +339,7 @@ class StockGraphEvalPipeline:
             },
             notTranJson=True,
             replaceTrace=True,
-            retryNum=1,
+            retryNum=1,    #注意这里在外层已经添加了重试机制。
             retryInterval=0.0,
         )
         if not isinstance(response, dict) or not response.get("isSucess"):
@@ -449,15 +450,15 @@ class StockGraphEvalPipeline:
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="基于 GF stockGraph 智能体的个股图谱评测脚本")
-    parser.add_argument("--data-path", "--input-path", dest="data_path", required=True, help="输入 SQL 文件路径")
+    parser.add_argument("--data-path", "--input-path", dest="data_path", default= "/home/customTest/individualStockReview/inputs/stock_graph.sql", help="输入 SQL 文件路径")
     parser.add_argument("--output", default=DEFAULT_OUTPUT_PATH, help="中间 JSON 保存路径，最终会生成同名 xlsx")
-    parser.add_argument("--use-count", "--limit", dest="use_count", type=int, default=None, help="只处理前 N 条数据")
+    parser.add_argument("--use-count", "--limit", dest="use_count", type=int, default=2, help="只处理前 N 条数据")
     parser.add_argument("--parallel-num", type=int, default=DEFAULT_PARALLEL_NUM, help="并发评测数，默认 5")
     parser.add_argument("--request-delay", type=float, default=DEFAULT_REQUEST_DELAY, help="每次请求之间的最小间隔秒数，默认 3")
     parser.add_argument(
         "--run-mode",
         choices=["resume", "overwrite"],
-        default="resume",
+        default="overwrite",
         help="resume=基于历史 JSON 续跑，overwrite=忽略历史结果重跑",
     )
     parser.add_argument(
