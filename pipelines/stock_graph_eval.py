@@ -21,7 +21,7 @@ from individualStockReview.utils.base import retryClass
 LOGGER = get_logger("pipelines.stock_graph_eval")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AGENT_KEY = "stockGraph"
-DEFAULT_SQL_PATH = ""
+DEFAULT_SQL_PATH = str(PROJECT_ROOT / "inputs" / "stock_graph.sql")
 DEFAULT_OUTPUT_PATH = str(PROJECT_ROOT / "outputs" / "stock_graph_eval.json")
 DEFAULT_AGENT_MESSAGE = (
     "请基于个股研究框架与输入图谱数据进行评测，只输出一个 JSON 对象，"
@@ -30,6 +30,10 @@ DEFAULT_AGENT_MESSAGE = (
 DEFAULT_PARALLEL_NUM = 1
 DEFAULT_RETRY_NUM = 3
 DEFAULT_REQUEST_DELAY = 3.0
+DEFAULT_REFRESH_SESSION = True
+BOOL_STR_CHOICES = ("True", "False")
+
+
 RESULT_COLUMNS = [
     "id",
     "security_code",
@@ -218,21 +222,7 @@ class StockGraphEvalPipeline:
 
     @staticmethod
     def _extract_result_dict(raw_output: Any) -> dict[str, Any]:
-        if isinstance(raw_output, dict):
-            parsed = raw_output
-        else:
-            text = str(raw_output or "").strip()
-            parsed = safe_parse_value(text, default=None)
-            if not isinstance(parsed, dict):
-                fenced = re.search(r"```(?:json)?\s*([\s\S]*?)```", text, flags=re.IGNORECASE)
-                if fenced:
-                    parsed = safe_parse_value(fenced.group(1).strip(), default=None)
-            if not isinstance(parsed, dict):
-                start = text.find("{")
-                end = text.rfind("}")
-                if start != -1 and end > start:
-                    parsed = safe_parse_value(text[start : end + 1], default=None)
-
+        parsed = raw_output if isinstance(raw_output, dict) else safe_parse_value(str(raw_output or "").strip(), default=None)
         if not isinstance(parsed, dict):
             raise ValueError("模型输出不是合法 JSON 对象")
         if "score" not in parsed or "reason" not in parsed:
@@ -255,9 +245,9 @@ class StockGraphEvalPipeline:
             LOGGER.warning("读取历史结果失败，将忽略旧结果: %s", exc)
             return {}
 
-        rows = payload.get("results", []) if isinstance(payload, dict) else payload
-        if not isinstance(rows, list):
+        if not isinstance(payload, list):
             return {}
+        rows = payload
 
         state: dict[str, dict[str, Any]] = {}
         for idx, item in enumerate(rows):
@@ -296,16 +286,6 @@ class StockGraphEvalPipeline:
             return existing is not None and not bool(existing.get("isSucess"))
         return existing is None or not bool(existing.get("isSucess"))
 
-    @staticmethod
-    def _render_progress(done: int, total: int, success: int, failed: int, skipped: int, width: int = 30) -> str:
-        ratio = 1.0 if total <= 0 else min(max(done / total, 0.0), 1.0)
-        filled = int(width * ratio)
-        bar = "#" * filled + "-" * (width - filled)
-        return (
-            f"\r进度 [{bar}] {done}/{total} ({ratio * 100:6.2f}%) "
-            f"成功:{success} 失败:{failed} 跳过:{skipped}"
-        )
-
     #注意这个是多线程请求间的空格时间。
     @staticmethod
     async def _wait_for_request_slot(request_delay: float, delay_lock: asyncio.Lock, request_state: dict[str, float]) -> None:
@@ -327,6 +307,7 @@ class StockGraphEvalPipeline:
         request_delay: float,
         delay_lock: asyncio.Lock,
         request_state: dict[str, float],
+        refresh_session: bool,
     ) -> tuple[Any, Any]:
         framework_json = record.get("framework_json") or ""
         graph_json = record.get("graph_json") or ""
@@ -341,6 +322,7 @@ class StockGraphEvalPipeline:
             replaceTrace=True,
             retryNum=1,    #注意这里在外层已经添加了重试机制。
             retryInterval=0.0,
+            refreshSession=refresh_session,
         )
         if not isinstance(response, dict) or not response.get("isSucess"):
             error_info = "模型调用失败"
@@ -357,6 +339,7 @@ class StockGraphEvalPipeline:
         request_delay: float,
         delay_lock: asyncio.Lock,
         request_state: dict[str, float],
+        refresh_session: bool,
     ) -> dict[str, Any]:
         retry_result = await retryClass.decorator(
             self._evaluate_once,
@@ -370,6 +353,7 @@ class StockGraphEvalPipeline:
             request_delay,
             delay_lock,
             request_state,
+            refresh_session,
         )
         if retry_result[0]:
             score, reason = retry_result[1]
@@ -385,6 +369,7 @@ class StockGraphEvalPipeline:
         resume_type: str = "all",
         parallel_num: int = DEFAULT_PARALLEL_NUM,
         request_delay: float = DEFAULT_REQUEST_DELAY,
+        refresh_session: bool = DEFAULT_REFRESH_SESSION,
     ) -> dict[str, Any]:
         if not str(data_path or "").strip():
             raise ValueError("data_path 不能为空，请通过参数传入输入 SQL 文件路径")
@@ -426,7 +411,15 @@ class StockGraphEvalPipeline:
                 await advance_progress("skipped")
                 return
             async with semaphore:
-                result = await self._evaluate_single(agent, record, idx, request_delay, delay_lock, request_state)
+                result = await self._evaluate_single(
+                    agent,
+                    record,
+                    idx,
+                    request_delay,
+                    delay_lock,
+                    request_state,
+                    refresh_session,
+                )
             result_map[key] = result
             await persist()
             await advance_progress("success" if result.get("isSucess") else "failed")
@@ -450,11 +443,18 @@ class StockGraphEvalPipeline:
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="基于 GF stockGraph 智能体的个股图谱评测脚本")
-    parser.add_argument("--data-path", "--input-path", dest="data_path", default= "/home/customTest/individualStockReview/inputs/stock_graph.sql", help="输入 SQL 文件路径")
+    parser.add_argument("--data-path", default=DEFAULT_SQL_PATH, help="输入 SQL 文件路径")
     parser.add_argument("--output", default=DEFAULT_OUTPUT_PATH, help="中间 JSON 保存路径，最终会生成同名 xlsx")
-    parser.add_argument("--use-count", "--limit", dest="use_count", type=int, default=2, help="只处理前 N 条数据")
-    parser.add_argument("--parallel-num", type=int, default=DEFAULT_PARALLEL_NUM, help="并发评测数，默认 5")
+    parser.add_argument("--use-count", type=int, default=2, help="只处理前 N 条数据")
+    parser.add_argument("--parallel-num", type=int, default=DEFAULT_PARALLEL_NUM, help="并发评测数，默认 1")
     parser.add_argument("--request-delay", type=float, default=DEFAULT_REQUEST_DELAY, help="每次请求之间的最小间隔秒数，默认 3")
+    parser.add_argument(
+        "--refresh-session",
+        choices=BOOL_STR_CHOICES,
+        default=str(DEFAULT_REFRESH_SESSION),
+        metavar="True|False",
+        help="评测调用时是否刷新 sessionId，传 True 或 False",
+    )
     parser.add_argument(
         "--run-mode",
         choices=["resume", "overwrite"],
@@ -483,6 +483,7 @@ def main(args: argparse.Namespace | None = None) -> dict[str, Any]:
         resume_type=arguments.resume_type,
         parallel_num=arguments.parallel_num,
         request_delay=arguments.request_delay,
+        refresh_session=arguments.refresh_session == "True",
     )
 
 

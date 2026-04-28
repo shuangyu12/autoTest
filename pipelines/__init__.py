@@ -8,6 +8,7 @@ __all__ = [
     "LangChainEvalPipeline",
     "ModelEvalPipeline",
     "PerformanceTemplateEvalPipeline",
+    "QuoteTestEvalPipeline",
     "StockGraphEvalPipeline",
 ]
 
@@ -33,6 +34,10 @@ def __getattr__(name: str) -> Any:
         from .performance_template_eval import PerformanceTemplateEvalPipeline
 
         return PerformanceTemplateEvalPipeline
+    if name == "QuoteTestEvalPipeline":
+        from .quote_test_eval import QuoteTestEvalPipeline
+
+        return QuoteTestEvalPipeline
     if name == "StockGraphEvalPipeline":
         from .stock_graph_eval import StockGraphEvalPipeline
 

@@ -8,7 +8,7 @@ directories:
 logging:
   logger_name: individualStockReview
   level: DEBUG
-  console_level: INFO
+  console_level: DEBUG
   file_level: DEBUG
   console_enabled: true
   file_enabled: true

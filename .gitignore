@@ -3,5 +3,6 @@
 /result/
 /outputs/
 /logs/
+/pipelines/prompts/
 __pycache__/
 *.pyc
