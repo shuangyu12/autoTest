@@ -184,7 +184,7 @@ def eval_graph_json(row):
 
 
 if __name__ == '__main__':
-    latest_path = Path('/home/ubuntu/repos/autoTest/outputs/stock_skeleton_graph_latest_excluded.csv')
+    latest_path = Path('/home/ubuntu/repos/autoTest/outputs/stock_skeleton_graph_latest_excluded_202608261032.csv')
     df = pd.read_csv(latest_path)
     eval_results = [eval_graph_json(row) for _, row in df.iterrows()]
     eval_df = pd.DataFrame(eval_results)
